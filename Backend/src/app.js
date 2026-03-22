@@ -60,6 +60,7 @@ if (!process.env.CLIENT_URL) {
 const allowedOrigins = [
     process.env.CLIENT_URL?.replace(/\/+$/, ''),
     'http://localhost:3000',
+    'http://localhost:5173',
 ].filter(Boolean);
 
 app.use(cors({
