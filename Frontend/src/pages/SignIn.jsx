@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { login } from '../api/auth'
 import { formatApiError } from '../api/client'
 import { setAccessToken } from '../auth/token'
+import { ClerkSignInButton } from '../components/ClerkAuthButtons'
 import { PasswordField } from '../components/PasswordField'
 import { AuthLayout } from './AuthLayout'
 
@@ -52,6 +53,8 @@ export default function SignIn() {
         </p>
       }
     >
+      <ClerkSignInButton />
+
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {error ? (
           <p className="auth-message auth-message--error" role="alert">

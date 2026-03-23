@@ -5,13 +5,24 @@ const cookieParser = require('cookie-parser');
 
 
 const connectDB = require('./config/db');
+const { scheduleCleanupJob, runCleanupNow } = require('./utils/cleanupUnverifiedUsers');
 const authRoutes = require('./routes/authRoutes');
+const dataRoutes = require('./routes/dataRoutes');
+const certificateRoutes = require('./routes/certificateRoutes');
 
 const app = express();
 
 // Connect to database
 connectDB();
 
+// Schedule cleanup job for unverified users with expired tokens
+scheduleCleanupJob();
+
+// Run cleanup immediately on startup
+runCleanupNow();
+
+// Security headers first — applied to every response including parse errors
+app.use(helmet());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,7 +43,6 @@ app.use((req, res, next) => {
   }
   return jsonStrict(req, res, next);
 });
-app.use(helmet());
 // Sanitize body and params to block NoSQL injection ($ and . keys)
 const sanitize = (obj) => {
     if (obj && typeof obj === 'object') {
@@ -79,6 +89,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/data', dataRoutes);
+app.use('/api/certificate', certificateRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {

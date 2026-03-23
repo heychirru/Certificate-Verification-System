@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Certificate of Internship – {{certificateId}}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 210mm;
+      height: 297mm;
+      font-family: 'Inter', sans-serif;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .certificate {
+      width: 190mm;
+      height: 277mm;
+      border: 2px solid #1a3a5c;
+      outline: 6px solid #c9a84c;
+      outline-offset: -12px;
+      padding: 14mm 16mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      background: #fff;
+    }
+
+    /* corner ornaments */
+    .certificate::before,
+    .certificate::after {
+      content: '✦';
+      position: absolute;
+      font-size: 22px;
+      color: #c9a84c;
+    }
+    .certificate::before { top: 18px; left: 22px; }
+    .certificate::after  { bottom: 18px; right: 22px; }
+
+    /* ── Header ── */
+    .org-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 22pt;
+      font-weight: 700;
+      color: #1a3a5c;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .org-tagline {
+      font-size: 8.5pt;
+      color: #666;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .divider {
+      width: 120mm;
+      height: 2px;
+      background: linear-gradient(to right, transparent, #c9a84c, transparent);
+      margin: 10px auto;
+    }
+
+    /* ── Title ── */
+    .cert-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 26pt;
+      font-weight: 700;
+      color: #1a3a5c;
+      text-align: center;
+      margin: 14px 0 8px;
+      letter-spacing: 1px;
+    }
+
+    .cert-subtitle {
+      font-size: 9pt;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 18px;
+    }
+
+    /* ── Body text ── */
+    .intro-text {
+      font-size: 10.5pt;
+      color: #444;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .student-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 28pt;
+      color: #1a3a5c;
+      text-align: center;
+      font-weight: 700;
+      margin: 6px 0;
+      border-bottom: 2px solid #c9a84c;
+      padding-bottom: 6px;
+      width: 100%;
+    }
+
+    .body-text {
+      font-size: 10.5pt;
+      color: #444;
+      text-align: center;
+      line-height: 1.8;
+      margin-top: 8px;
+    }
+
+    .highlight {
+      font-weight: 600;
+      color: #1a3a5c;
+    }
+
+    /* ── Details grid ── */
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 30px;
+      margin: 18px 0;
+      width: 100%;
+      background: #f8f6f0;
+      border: 1px solid #e8dfc8;
+      border-radius: 6px;
+      padding: 14px 20px;
+    }
+
+    .detail-item { display: flex; flex-direction: column; }
+    .detail-label { font-size: 7.5pt; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+    .detail-value { font-size: 10pt; color: #1a3a5c; font-weight: 600; margin-top: 2px; }
+
+    /* ── Footer / Signature ── */
+    .signature-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      margin-top: auto;
+      padding-top: 14px;
+    }
+
+    .sig-block { text-align: center; }
+    .sig-line {
+      width: 55mm;
+      border-top: 1.5px solid #1a3a5c;
+      margin-bottom: 5px;
+    }
+    .sig-label { font-size: 8pt; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    .sig-name  { font-size: 9pt; color: #1a3a5c; font-weight: 600; margin-top: 2px; }
+
+    .cert-id-badge {
+      font-size: 7.5pt;
+      color: #999;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px 10px;
+      text-align: center;
+    }
+    .cert-id-badge span { display: block; font-weight: 700; color: #1a3a5c; font-size: 9pt; margin-top: 2px; }
+
+    .footer-note {
+      font-size: 7pt;
+      color: #aaa;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="certificate">
+
+    <!-- Header -->
+    <div class="org-name">{{organizationName}}</div>
+    <div class="org-tagline">Excellence in Technology &amp; Innovation</div>
+    <div class="divider"></div>
+
+    <!-- Title -->
+    <div class="cert-title">Certificate of Internship</div>
+    <div class="cert-subtitle">This is to certify that</div>
+
+    <!-- Student Name -->
+    <div class="student-name">{{studentName}}</div>
+
+    <!-- Body -->
+    <p class="body-text">
+      has successfully completed an internship in the field of<br/>
+      <span class="highlight">{{internshipDomain}}</span><br/>
+      from <span class="highlight">{{startDate}}</span> to <span class="highlight">{{endDate}}</span><br/>
+      for a total duration of <span class="highlight">{{duration}}</span>.
+    </p>
+
+    <!-- Details Grid -->
+    <div class="details-grid">
+      <div class="detail-item">
+        <span class="detail-label">Certificate ID</span>
+        <span class="detail-value">{{certificateId}}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Issue Date</span>
+        <span class="detail-value">{{issueDate}}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Internship Domain</span>
+        <span class="detail-value">{{internshipDomain}}</span>
+      </div>
+      <div class="detail-item">
+        <span class="detail-label">Duration</span>
+        <span class="detail-value">{{duration}}</span>
+      </div>
+    </div>
+
+    <!-- Signature -->
+    <div class="signature-section">
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-label">Authorized Signatory</div>
+        <div class="sig-name">{{organizationName}}</div>
+      </div>
+
+      <div class="cert-id-badge">
+        Certificate ID<span>{{certificateId}}</span>
+      </div>
+
+      <div class="sig-block">
+        <div class="sig-line"></div>
+        <div class="sig-label">Date of Issue</div>
+        <div class="sig-name">{{issueDate}}</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      This certificate is digitally generated and is valid without a physical signature. · {{organizationName}}
+    </div>
+
+  </div>
+</body>
+</html>

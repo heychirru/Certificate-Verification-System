@@ -13,3 +13,18 @@ export function register(payload) {
     body: JSON.stringify(payload),
   })
 }
+
+export function verifyEmail(token) {
+  return apiJson(`/api/auth/verify-email?token=${token}`, {
+    method: 'GET',
+  })
+}
+
+export function clerkTokenExchange(clerkToken) {
+  return apiJson('/api/auth/clerk-token', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${clerkToken}`,
+    },
+  })
+}

@@ -8,6 +8,11 @@ const {
   refreshToken,
   logout,
   getMe,
+  verifyEmail,
+  resendVerification,
+  checkVerificationStatus,
+  manualVerifyUser,
+  clerkTokenExchange,
 } = require('../controllers/authController');
 
 const authenticate = require('../middleware/authenticate');
@@ -75,5 +80,30 @@ router.post('/logout', authenticate, logout);
 // @desc    Get current user profile
 // @access  Private - Authenticated
 router.get('/me', authenticate, getMe);
+
+// @route   GET /api/auth/verify-email
+// @desc    Verify email with token from email link
+// @access  Public
+router.get('/verify-email', verifyEmail);
+
+// @route   POST /api/auth/resend-verification
+// @desc    Request a new verification email
+// @access  Public
+router.post('/resend-verification', requireJsonBody, resendVerification);
+
+// @route   GET /api/auth/check-verification?email=...
+// @desc    DEBUG: Check if user email is verified
+// @access  Public
+router.get('/check-verification', checkVerificationStatus);
+
+// @route   POST /api/auth/verify-manual
+// @desc    DEBUG: Manually verify user by email (for testing)
+// @access  Public (development only)
+router.post('/verify-manual', requireJsonBody, manualVerifyUser);
+
+// @route   POST /api/auth/clerk-token
+// @desc    Exchange Clerk token for JWT (for OAuth: Google, GitHub)
+// @access  Public (with Clerk token in Authorization header)
+router.post('/clerk-token', clerkTokenExchange);
 
 module.exports = router;

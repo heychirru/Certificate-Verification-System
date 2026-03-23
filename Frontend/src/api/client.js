@@ -1,7 +1,3 @@
-/**
- * API base URL. Empty string uses same origin (Vite dev proxy → backend).
- * For production builds, set VITE_API_BASE_URL to your API origin.
- */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export function formatApiError(err) {

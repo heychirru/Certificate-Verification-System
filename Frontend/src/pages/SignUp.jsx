@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register } from '../api/auth'
 import { formatApiError } from '../api/client'
+import { ClerkSignUpButton } from '../components/ClerkAuthButtons'
 import { PasswordField } from '../components/PasswordField'
 import { AuthLayout } from './AuthLayout'
 
@@ -54,6 +55,8 @@ export default function SignUp() {
         </p>
       }
     >
+      <ClerkSignUpButton />
+
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {fieldError ? (
           <p className="auth-message auth-message--error" role="alert">

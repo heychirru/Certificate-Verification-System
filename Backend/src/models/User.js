@@ -34,6 +34,20 @@ const userSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    verificationTokenExpiry: {
+      type: Date,
+      default: null,
+      select: false,
+    },
   },
   {
     timestamps: true, // Auto-manages createdAt and updatedAt
