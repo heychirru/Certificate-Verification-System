@@ -78,8 +78,6 @@ const allowedOrigins = [
     'http://localhost:5173',
 ].filter(Boolean);
 
-console.log('✅ Allowed CORS Origins:', allowedOrigins);
-
 app.use(cors({
     origin: (origin, callback) => {
         // Allow server-to-server requests (no origin) and whitelisted origins

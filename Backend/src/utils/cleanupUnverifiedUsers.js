@@ -33,7 +33,6 @@ const scheduleCleanupJob = () => {
   try {
     // Run cleanup task every hour at the top of the hour
     const task = cron.schedule('0 * * * *', cleanupExpiredVerificationTokens);
-    console.log('✓ Email verification cleanup job scheduled (runs hourly)');
     return task;
   } catch (error) {
     console.error('❌ Failed to schedule cleanup job:', error.message);
@@ -46,7 +45,6 @@ const scheduleCleanupJob = () => {
 // @return  {Promise<void>}
 // ─────────────────────────────────────────────────────────────────────────────
 const runCleanupNow = async () => {
-  console.log('🧹 Running initial cleanup of expired unverified users...');
   await cleanupExpiredVerificationTokens();
 };
 

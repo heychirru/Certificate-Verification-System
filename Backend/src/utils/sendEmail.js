@@ -32,11 +32,7 @@ transporter.verify((error, success) => {
   if (error) {
     console.error('⚠️  Email transporter verification failed:', error.message);
     console.log('📧 Email sending will be retried when needed');
-  } else {
-    console.log('✓ Email transporter ready:', success);
   }
-}).catch(err => {
-  console.error('⚠️  Email verification error:', err.message);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
