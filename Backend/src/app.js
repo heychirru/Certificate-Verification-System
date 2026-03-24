@@ -69,9 +69,12 @@ if (!process.env.CLIENT_URL) {
 // Build list of allowed origins from env, stripping any trailing slashes
 const allowedOrigins = [
     process.env.CLIENT_URL?.replace(/\/+$/, ''),
+    'https://certificate-verified-system.netlify.app',
     'http://localhost:3000',
     'http://localhost:5173',
 ].filter(Boolean);
+
+console.log('✅ Allowed CORS Origins:', allowedOrigins);
 
 app.use(cors({
     origin: (origin, callback) => {
