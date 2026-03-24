@@ -1,4 +1,6 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const PRIMARY_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const FALLBACK_URL = import.meta.env.VITE_API_FALLBACK_URL ?? 'http://localhost:5000'
+export const API_BASE_URL = PRIMARY_URL || FALLBACK_URL
 
 export function formatApiError(err) {
   if (err?.details && Array.isArray(err.details)) {
@@ -12,17 +14,29 @@ export function formatApiError(err) {
  * @param {RequestInit} [options]
  */
 export async function apiJson(path, options = {}) {
-  const url = `${API_BASE_URL}${path}`
-  const { headers: extraHeaders, body, ...rest } = options
-  const res = await fetch(url, {
-    ...rest,
-    credentials: 'include',
-    headers: {
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-      ...extraHeaders,
-    },
-    body,
-  })
+  const tryUrl = async (baseUrl) => {
+    const url = `${baseUrl}${path}`
+    const { headers: extraHeaders, body, ...rest } = options
+    return fetch(url, {
+      ...rest,
+      credentials: 'include',
+      headers: {
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...extraHeaders,
+      },
+      body,
+    })
+  }
+
+  let res
+  try {
+    // Try primary URL first
+    res = await tryUrl(PRIMARY_URL)
+  } catch (err) {
+    console.warn('⚠️ Primary URL failed, trying fallback:', PRIMARY_URL, err.message)
+    // Fallback to local development server
+    res = await tryUrl(FALLBACK_URL)
+  }
 
   let data = null
   const text = await res.text()
