@@ -12,6 +12,10 @@ const certificateRoutes = require('./routes/certificateRoutes');
 
 const app = express();
 
+// Trust proxy - IMPORTANT for production (Render, Heroku, etc use proxies)
+// This allows X-Forwarded-For headers to be used for rate limiting & logging
+app.set('trust proxy', 1);
+
 // Connect to database
 connectDB();
 

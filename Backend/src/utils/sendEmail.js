@@ -1,24 +1,42 @@
 const nodemailer = require('nodemailer');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Create transporter using Gmail SMTP
-// Note: GMAIL_APP_PASSWORD must NOT have spaces (even though Google displays with spaces)
+// Create transporter using Gmail SMTP with production fallback
 // ─────────────────────────────────────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER?.trim(),
-    pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''), // Remove all spaces
-  },
-});
+let transporter;
 
-// Verify transporter on startup
+if (process.env.NODE_ENV === 'production') {
+  // Production: Try Gmail first, with longer timeout
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER?.trim(),
+      pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
+    },
+    timeout: 10000, // Increase timeout for Render
+    connectionUrl: process.env.EMAIL_URL, // Alternative: use EMAIL_URL if set
+  });
+} else {
+  // Development: Use Gmail
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER?.trim(),
+      pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
+    },
+  });
+}
+
+// Verify transporter on startup (non-blocking)
 transporter.verify((error, success) => {
   if (error) {
-    console.error('✗ Email transporter verification failed:', error.message);
+    console.error('⚠️  Email transporter verification failed:', error.message);
+    console.log('📧 Email sending will be retried when needed');
   } else {
     console.log('✓ Email transporter ready:', success);
   }
+}).catch(err => {
+  console.error('⚠️  Email verification error:', err.message);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,27 +172,63 @@ const generateVerificationEmailHTML = (email, verificationToken, userName) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Send verification email using Nodemailer
+// @desc    Send verification email using Nodemailer with retry logic
 // @param   {string} email - Recipient email
 // @param   {string} verificationToken - Token for verification
 // @param   {string} userName - User's name
 // @return  {Promise<void>}
 // ─────────────────────────────────────────────────────────────────────────────
-const sendVerificationEmail = async (email, verificationToken, userName) => {
-  try {
-    const mailOptions = {
-      from: `"Certificate Verification System" <${process.env.GMAIL_USER}>`,
-      to: email,
-      subject: 'Verify Your Email Address',
-      html: generateVerificationEmailHTML(email, verificationToken, userName),
-    };
+const sendVerificationEmail = async (email, verificationToken, userName, retries = 3) => {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const mailOptions = {
+        from: `"Certificate Verification System" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'Verify Your Email Address',
+        html: generateVerificationEmailHTML(email, verificationToken, userName),
+      };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✓ Verification email sent to ${email}`);
-  } catch (error) {
-    console.error(`✗ Failed to send verification email to ${email}:`, error.message);
-    throw new Error('Failed to send verification email. Please try again later.');
+      await transporter.sendMail(mailOptions);
+      console.log(`✓ Verification email sent to ${email}`);
+      return; // Success - exit function
+      
+    } catch (error) {
+      lastError = error;
+      console.error(
+        `⚠️  Attempt ${attempt}/${retries} - Failed to send email to ${email}:`,
+        error.message
+      );
+
+      // Don't retry on auth errors or syntax errors
+      if (
+        error.message.includes('Invalid login') || 
+        error.message.includes('Invalid email') ||
+        error.message.includes('Bad email')
+      ) {
+        console.error('❌ Email configuration error - not retrying');
+        break;
+      }
+
+      // Wait before retry (exponential backoff: 2s, 4s, 6s)
+      if (attempt < retries) {
+        const waitTime = attempt * 2000;
+        console.log(`⏳ Retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
   }
+
+  // All retries failed
+  console.error(
+    `❌ Failed to send verification email to ${email} after ${retries} attempts:`,
+    lastError.message
+  );
+  throw new Error(
+    'Failed to send verification email. Your account has been created. ' +
+    'Please contact support if you need to resend the verification email.'
+  );
 };
 
 module.exports = { sendVerificationEmail };
