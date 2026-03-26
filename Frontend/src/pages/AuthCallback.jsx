@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clerkTokenExchange } from '../api/auth'
 import { setAccessToken } from '../auth/token'
+import { useAuth } from '../context/AuthContext'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const { session, isLoaded } = useSession()
   const [error, setError] = useState(null)
 
@@ -45,8 +47,9 @@ export default function AuthCallback() {
         console.log('✓ Token exchange successful, setting access token')
 
         setAccessToken(res.accessToken)
+        setUser(res.user || null)
         setTimeout(() => {
-          navigate('/', { replace: true })
+          navigate('/dashboard', { replace: true })
         }, 500)
       } catch (err) {
         console.error('❌ Token exchange error:', err)
@@ -58,7 +61,7 @@ export default function AuthCallback() {
     }
 
     exchangeToken()
-  }, [isLoaded, session, navigate])
+  }, [isLoaded, session, navigate, setUser])
 
   if (error) {
     return (

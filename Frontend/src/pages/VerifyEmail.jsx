@@ -6,17 +6,12 @@ import './Auth.css'
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const token = searchParams.get('token')
   const [status, setStatus] = useState('loading') // loading, success, error
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    const token = searchParams.get('token')
-
-    if (!token) {
-      setStatus('error')
-      setMessage('Invalid verification link. Token is missing.')
-      return
-    }
+    if (!token) return
 
     const verify = async () => {
       try {
@@ -45,7 +40,31 @@ export default function VerifyEmail() {
     }
 
     verify()
-  }, [searchParams, navigate])
+  }, [token, navigate])
+
+  if (!token) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <h1>Email Verification</h1>
+          </div>
+          <div className="auth-body">
+            <div className="verification-error">
+              <div className="error-icon">✗</div>
+              <h2>Verification Failed</h2>
+              <p>Invalid verification link. Token is missing.</p>
+              <div className="error-actions">
+                <button onClick={() => navigate('/sign-up')} className="btn btn-primary">
+                  Try Signing Up Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="auth-container">

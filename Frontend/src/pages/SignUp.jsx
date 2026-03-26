@@ -7,6 +7,7 @@ import { PasswordField } from '../components/PasswordField'
 import { AuthLayout } from './AuthLayout'
 
 export default function SignUp() {
+  const showClerk = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
   const navigate = useNavigate()
   const [pending, setPending] = useState(false)
   const [error, setError] = useState(null)
@@ -55,7 +56,7 @@ export default function SignUp() {
         </p>
       }
     >
-      <ClerkSignUpButton />
+      {showClerk ? <ClerkSignUpButton /> : null}
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {fieldError ? (

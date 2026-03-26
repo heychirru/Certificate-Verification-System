@@ -28,3 +28,34 @@ export function clerkTokenExchange(clerkToken) {
     },
   })
 }
+
+export function refresh() {
+  return apiJson('/api/auth/refresh', {
+    method: 'POST',
+  })
+}
+
+export function me() {
+  return apiJson('/api/auth/me', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('cvs_access_token') || ''}`,
+    },
+  })
+}
+
+export function logout() {
+  return apiJson('/api/auth/logout', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('cvs_access_token') || ''}`,
+    },
+  })
+}
+
+export function resendVerification(email) {
+  return apiJson('/api/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}

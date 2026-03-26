@@ -6,9 +6,12 @@ import { setAccessToken } from '../auth/token'
 import { ClerkSignInButton } from '../components/ClerkAuthButtons'
 import { PasswordField } from '../components/PasswordField'
 import { AuthLayout } from './AuthLayout'
+import { useAuth } from '../context/AuthContext'
 
 export default function SignIn() {
+  const showClerk = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
   const navigate = useNavigate()
+  const { setUser } = useAuth()
   const location = useLocation()
   const prefilledEmail = location.state?.registeredEmail ?? ''
   const [pending, setPending] = useState(false)
@@ -32,7 +35,8 @@ export default function SignIn() {
     try {
       const res = await login({ email, password })
       setAccessToken(res.accessToken)
-      navigate('/', { replace: true })
+      setUser(res.user || null)
+      navigate('/dashboard', { replace: true })
     } catch (err) {
       setError(formatApiError(err))
     } finally {
@@ -53,7 +57,7 @@ export default function SignIn() {
         </p>
       }
     >
-      <ClerkSignInButton />
+      {showClerk ? <ClerkSignInButton /> : null}
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {error ? (

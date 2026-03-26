@@ -22,11 +22,17 @@ export default function Home() {
           them instantly—without exposing more data than necessary.
         </p>
         <div className="home-actions">
+          <Link to="/verify" className="home-btn home-btn-ghost">
+            Verify Certificate
+          </Link>
           <Link to="/sign-up" className="home-btn home-btn-primary">
             Get started
           </Link>
           <Link to="/sign-in" className="home-btn home-btn-ghost">
             I have an account
+          </Link>
+          <Link to="/dashboard" className="home-btn home-btn-ghost">
+            Dashboard
           </Link>
         </div>
       </main>

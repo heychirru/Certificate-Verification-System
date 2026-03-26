@@ -5,6 +5,10 @@ import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import VerifyEmail from './pages/VerifyEmail'
 import AuthCallback from './pages/AuthCallback'
+import PublicVerify from './pages/PublicVerify'
+import Dashboard from './pages/Dashboard'
+import ProtectedRoute from './components/ProtectedRoute'
+import { AuthProvider } from './context/AuthContext'
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
@@ -16,29 +20,29 @@ if (!clerkPubKey) {
 }
 
 function App() {
-  if (!clerkPubKey) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h1>❌ Configuration Error</h1>
-        <p>VITE_CLERK_PUBLISHABLE_KEY is missing from Frontend/.env.local</p>
-        <p>Please create the file and add your Clerk public key.</p>
-      </div>
-    )
-  }
-
-  return (
-    <ClerkProvider 
-      publishableKey={clerkPubKey}
-      afterSignOutUrl="/sign-in"
-    >
+  const appRoutes = (
+    <AuthProvider>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/verify" element={<PublicVerify />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/sign-in" element={<SignIn />} />
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/auth-callback" element={<AuthCallback />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </AuthProvider>
+  )
+
+  if (!clerkPubKey) return appRoutes
+
+  return (
+    <ClerkProvider 
+      publishableKey={clerkPubKey}
+      afterSignOutUrl="/sign-in"
+    >
+      {appRoutes}
     </ClerkProvider>
   )
 }
