@@ -1,130 +1,148 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { register } from '../api/auth'
-import { formatApiError } from '../api/client'
-import { ClerkSignUpButton } from '../components/ClerkAuthButtons'
-import { PasswordField } from '../components/PasswordField'
-import { AuthLayout } from './AuthLayout'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSignIn, useClerk } from '@clerk/clerk-react';
+import { register } from '../api/auth';
+import { formatApiError } from '../api/client';
 
 export default function SignUp() {
-  const navigate = useNavigate()
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState(null)
-  const [fieldError, setFieldError] = useState(null)
+  const navigate = useNavigate();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Clerk hooks for Google Sign-Up
+  const { signIn, isLoaded: signInLoaded } = useSignIn();
+  const { loaded: clerkLoaded } = useClerk();
+
+  const handleGoogleSignUp = async () => {
+    try {
+      if (!signIn || !clerkLoaded) return;
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: `${window.location.origin}/auth-callback`,
+        redirectUrlComplete: `${window.location.origin}/auth-callback`,
+      });
+    } catch (err) {
+      setError('Failed to initialize Google Sign-Up.');
+    }
+  };
 
   async function handleSubmit(e) {
-    e.preventDefault()
-    setError(null)
-    setFieldError(null)
-    const form = e.target
-    const data = new FormData(form)
-    const password = String(data.get('password'))
-    const confirm = String(data.get('confirm'))
+    e.preventDefault();
+    setError(null);
+    const form = e.target;
+    const data = new FormData(form);
+    
+    const password = String(data.get('password'));
+    const confirm = String(data.get('confirm'));
+    
     if (password !== confirm) {
-      setFieldError('Passwords do not match.')
-      return
+      setError('Passwords do not match.');
+      return;
     }
 
-    setPending(true)
-    const name = String(data.get('name')).trim()
-    const email = String(data.get('email')).trim()
+    setPending(true);
+    const name = String(data.get('name')).trim();
+    const email = String(data.get('email')).trim();
 
     try {
-      await register({ name, email, password })
-      navigate('/sign-in', {
-        replace: false,
-        state: { registeredEmail: email },
-      })
+      await register({ name, email, password });
+      // Redirect to sign-in and pass the email state to trigger the green notice
+      navigate('/sign-in', { state: { registeredEmail: email } });
     } catch (err) {
-      setError(formatApiError(err))
-    } finally {
-      setPending(false)
+      setError(formatApiError(err));
+      setPending(false);
     }
   }
 
   return (
-    <AuthLayout
-      title="Create account"
-      subtitle="Register your organization to start issuing certificates learners can verify."
-      footer={
-        <p className="auth-footer">
-          Already have an account?{' '}
-          <Link to="/sign-in" className="auth-link">
-            Sign in
-          </Link>
-        </p>
-      }
-    >
-      <ClerkSignUpButton />
+    <div>
+      <h2 className="text-2xl font-bold text-gray-900 text-center mb-6">Create your account</h2>
 
-      <form className="auth-form" onSubmit={handleSubmit} noValidate>
-        {fieldError ? (
-          <p className="auth-message auth-message--error" role="alert">
-            {fieldError}
-          </p>
-        ) : null}
-        {error ? (
-          <p className="auth-message auth-message--error" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="auth-field">
-          <label htmlFor="signup-name">Full name</label>
+      {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md">{error}</div>}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Full Name</label>
           <input
-            id="signup-name"
             name="name"
             type="text"
-            autoComplete="name"
-            placeholder="Jane Doe"
-            minLength={2}
-            maxLength={100}
             required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
           />
         </div>
-        <div className="auth-field">
-          <label htmlFor="signup-email">Work email</label>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Email address</label>
           <input
-            id="signup-email"
             name="email"
             type="email"
-            autoComplete="email"
-            placeholder="you@organization.edu"
             required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
           />
         </div>
-        <PasswordField
-          id="signup-password"
-          name="password"
-          label="Password"
-          autoComplete="new-password"
-          placeholder="Strong password"
-          minLength={8}
-          required
-        />
-        <p className="auth-hint">
-          Use at least 8 characters with one uppercase letter, one number, and one
-          special character (@$!%*?&#).
-        </p>
-        <PasswordField
-          id="signup-confirm"
-          name="confirm"
-          label="Confirm password"
-          autoComplete="new-password"
-          placeholder="Repeat password"
-          minLength={8}
-          required
-        />
-        <label className="auth-checkbox">
-          <input name="terms" type="checkbox" required />
-          <span>
-            I agree to the terms of service and understand that credentials are
-            stored according to your organization&apos;s policy.
-          </span>
-        </label>
-        <button className="auth-submit" type="submit" disabled={pending}>
-          {pending ? 'Creating account…' : 'Create account'}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Password</label>
+          <input
+            name="password"
+            type="password"
+            required
+            minLength={8}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
+          <input
+            name="confirm"
+            type="password"
+            required
+            minLength={8}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50"
+        >
+          {pending ? 'Creating account...' : 'Create account'}
         </button>
       </form>
-    </AuthLayout>
-  )
+
+      <div className="mt-6">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300" /></div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <button
+            onClick={handleGoogleSignUp}
+            type="button"
+            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          >
+            <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Google
+          </button>
+        </div>
+      </div>
+
+      <p className="mt-6 text-center text-sm text-gray-600">
+        Already have an account?{' '}
+        <Link to="/sign-in" className="font-medium text-purple-600 hover:text-purple-500">
+          Sign in
+        </Link>
+      </p>
+    </div>
+  );
 }
