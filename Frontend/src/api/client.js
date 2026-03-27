@@ -1,6 +1,8 @@
-const PRIMARY_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const FALLBACK_URL = import.meta.env.VITE_API_FALLBACK_URL ?? 'http://localhost:5000'
-export const API_BASE_URL = PRIMARY_URL || FALLBACK_URL
+const API_BASE_URL_ENV = import.meta.env.VITE_API_BASE_URL
+const DEV_URL = 'http://localhost:5000/api'
+const DEFAULT_PROD_URL = 'https://cvs-backend.onrender.com/api' // Update with your Render URL
+
+export const API_BASE_URL = API_BASE_URL_ENV || (import.meta.env.DEV ? DEV_URL : DEFAULT_PROD_URL)
 
 export function formatApiError(err) {
   if (err?.details && Array.isArray(err.details)) {
