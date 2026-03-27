@@ -1,0 +1,33 @@
+.verify-page {
+  padding: 1.2rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.verify-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.verify-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.verify-error {
+  color: #d33;
+}
+
+.verify-card pre {
+  margin: 0;
+  padding: 0.7rem;
+  border-radius: 8px;
+  background: var(--code-bg);
+  overflow: auto;
+  font-size: 0.85rem;
+}
