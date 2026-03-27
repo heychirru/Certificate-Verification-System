@@ -1,50 +1,55 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { ClerkProvider } from '@clerk/clerk-react'
-import Home from './pages/Home'
-import SignIn from './pages/SignIn'
-import SignUp from './pages/SignUp'
-import VerifyEmail from './pages/VerifyEmail'
-import AuthCallback from './pages/AuthCallback'
-import PublicVerify from './pages/PublicVerify'
-import Dashboard from './pages/Dashboard'
-import ProtectedRoute from './components/ProtectedRoute'
-import { AuthProvider } from './context/AuthContext'
+import { Routes, Route } from 'react-router-dom';
+import { ClerkProvider } from '@clerk/clerk-react';
 
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+// Auth Pages 
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import VerifyEmail from './pages/VerifyEmail';
+import AuthCallback from './pages/AuthCallback';
+import { AuthLayout } from './pages/AuthLayout';
 
-if (!clerkPubKey) {
-  console.error('❌ VITE_CLERK_PUBLISHABLE_KEY not found in .env.local')
-  console.error('Please create Frontend/.env.local with: VITE_CLERK_PUBLISHABLE_KEY=your_key')
-} else {
-  console.log('✓ Clerk Public Key loaded:', clerkPubKey.substring(0, 20) + '...')
-}
+// Feature Pages 
+import Home from './pages/Home';
+import AdminDashboard from './pages/AdminDashboard';
+import CertificateView from './pages/CertificateView';
+
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 function App() {
-  const appRoutes = (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/verify" element={<PublicVerify />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/sign-up" element={<SignUp />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/auth-callback" element={<AuthCallback />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AuthProvider>
-  )
-
-  if (!clerkPubKey) return appRoutes
+  if (!clerkPubKey) {
+    return (
+      <div className="p-8 text-center mt-20">
+        <h1 className="text-2xl font-bold text-red-600">❌ Configuration Error</h1>
+        <p className="mt-2 text-gray-600">VITE_CLERK_PUBLISHABLE_KEY is missing from Frontend/.env</p>
+      </div>
+    );
+  }
 
   return (
-    <ClerkProvider 
-      publishableKey={clerkPubKey}
-      afterSignOutUrl="/sign-in"
-    >
-      {appRoutes}
+    <ClerkProvider publishableKey={clerkPubKey} afterSignOutUrl="/sign-in">
+      <Routes>
+        {/* Public / Student Routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/certificate/:id" element={<CertificateView />} />
+        
+        {/* Auth Routes */}
+        <Route element={<AuthLayout />}>
+          <Route path="/sign-in" element={<SignIn />} />
+          <Route path="/sign-up" element={<SignUp />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+        </Route>
+        
+        {/* Clerk's hidden callback route for Google Login */}
+        <Route path="/auth-callback" element={<AuthCallback />} />
+        
+        {/* Dashboards (Unprotected for now so we can design them) */}
+        <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* Fallback 404 Route */}
+        <Route path="*" element={<div className="text-center mt-20"><h2 className="text-2xl font-bold">404 - Page Not Found</h2></div>} />
+      </Routes>
     </ClerkProvider>
-  )
+  );
 }
 
-export default App
+export default App;

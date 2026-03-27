@@ -1,34 +1,23 @@
 const nodemailer = require('nodemailer');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Create transporter using Gmail SMTP
+// Create transporter using Gmail SMTP with production fallback
 // ─────────────────────────────────────────────────────────────────────────────
 let transporter;
 
 if (process.env.NODE_ENV === 'production') {
-  // Production: Gmail SMTP with enhanced settings for cloud hosting
+  // Production: Try Gmail first, with longer timeout
   transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // Use STARTTLS instead of SSL
+    service: 'gmail',
     auth: {
       user: process.env.GMAIL_USER?.trim(),
       pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
     },
-    pool: {
-      maxConnections: 1,
-      maxMessages: 5,
-      rateDelta: 2000,
-      rateLimit: 5,
-    },
-    timeout: 15000,
-    connectionTimeout: 10000,
-    socketTimeout: 15000,
-    requireTLS: true,
+    timeout: 10000, // Increase timeout for Render
+    connectionUrl: process.env.EMAIL_URL, // Alternative: use EMAIL_URL if set
   });
-  console.log('✓ Using Gmail SMTP for email in production');
 } else {
-  // Development: Gmail SMTP
+  // Development: Use Gmail
   transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -43,8 +32,6 @@ transporter.verify((error, success) => {
   if (error) {
     console.error('⚠️  Email transporter verification failed:', error.message);
     console.log('📧 Email sending will be retried when needed');
-  } else {
-    console.log('✓ Email transporter verified');
   }
 });
 
@@ -189,9 +176,8 @@ const generateVerificationEmailHTML = (email, verificationToken, userName) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const sendVerificationEmail = async (email, verificationToken, userName, retries = 3) => {
   let lastError;
-  const maxRetries = process.env.NODE_ENV === 'production' ? 5 : retries;
   
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const mailOptions = {
         from: `"Certificate Verification System" <${process.env.GMAIL_USER}>`,
@@ -207,7 +193,7 @@ const sendVerificationEmail = async (email, verificationToken, userName, retries
     } catch (error) {
       lastError = error;
       console.error(
-        `⚠️  Attempt ${attempt}/${maxRetries} - Failed to send email to ${email}:`,
+        `⚠️  Attempt ${attempt}/${retries} - Failed to send email to ${email}:`,
         error.message
       );
 
@@ -215,17 +201,16 @@ const sendVerificationEmail = async (email, verificationToken, userName, retries
       if (
         error.message.includes('Invalid login') || 
         error.message.includes('Invalid email') ||
-        error.message.includes('Bad email') ||
-        error.message.includes('Invalid credentials')
+        error.message.includes('Bad email')
       ) {
         console.error('❌ Email configuration error - not retrying');
         break;
       }
 
-      // Wait before retry (exponential backoff: 2-4s in dev, 4-8s in prod)
-      if (attempt < maxRetries) {
-        const waitTime = attempt * (process.env.NODE_ENV === 'production' ? 4000 : 2000);
-        console.log(`⏳ Retrying in ${(waitTime/1000).toFixed(1)}s... (Attempt ${attempt}/${maxRetries})`);
+      // Wait before retry (exponential backoff: 2s, 4s, 6s)
+      if (attempt < retries) {
+        const waitTime = attempt * 2000;
+        console.log(`⏳ Retrying in ${waitTime}ms...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
@@ -233,10 +218,9 @@ const sendVerificationEmail = async (email, verificationToken, userName, retries
 
   // All retries failed
   console.error(
-    `❌ Failed to send verification email to ${email} after ${maxRetries} attempts:`,
+    `❌ Failed to send verification email to ${email} after ${retries} attempts:`,
     lastError.message
   );
-  
   throw new Error(
     'Failed to send verification email. Your account has been created. ' +
     'Please contact support if you need to resend the verification email.'

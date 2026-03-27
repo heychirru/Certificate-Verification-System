@@ -1,6 +1,5 @@
 const Student = require('../models/Student');
 const { calculateDuration, formatDate, generateCertificatePDF } = require('../utils/certificateGenerator');
-const { getPDF, setPDF, invalidatePDF } = require('../utils/pdfCache');
 
 // Validate certificate ID format — only alphanumeric, hyphens, underscores
 // This also catches URL-decoded special chars (!, @, etc.) Express passes through
@@ -44,7 +43,6 @@ exports.getCertificateData = async (req, res, next) => {
 exports.previewCertificate = exports.getCertificateData;
 
 // ─── GET /api/certificate/:certificateId/download ────────────────────────────
-// Download certificate as PDF (with caching)
 
 exports.downloadCertificate = async (req, res, next) => {
   try {
@@ -54,24 +52,12 @@ exports.downloadCertificate = async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid certificate ID format' });
     }
 
-    // Check cache first
-    let pdfBuffer = getPDF(certificateId);
-    if (pdfBuffer) {
-      console.log(`✓ PDF served from cache: ${certificateId}`);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Certificate_${certificateId}.pdf"`);
-      res.setHeader('Content-Length', pdfBuffer.length);
-      res.setHeader('X-Cache', 'HIT');
-      return res.end(pdfBuffer);
-    }
-
-    // Cache miss - fetch from database
     const student = await Student.findOne({ certificateId }).lean();
     if (!student) {
       return res.status(404).json({ error: 'Certificate not found' });
     }
 
-    // Generate PDF
+    let pdfBuffer;
     try {
       pdfBuffer = await generateCertificatePDF(student);
     } catch (err) {
@@ -79,13 +65,10 @@ exports.downloadCertificate = async (req, res, next) => {
       return res.status(500).json({ error: 'Failed to generate certificate' });
     }
 
-    // Cache the PDF for future requests
-    setPDF(certificateId, pdfBuffer);
-
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="Certificate_${certificateId}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${certificateId}.pdf"`);
     res.setHeader('Content-Length', pdfBuffer.length);
-    res.setHeader('X-Cache', 'MISS');
+
     return res.end(pdfBuffer);
   } catch (error) {
     next(error);

@@ -1,16 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
 const cookieParser = require('cookie-parser');
+
 
 const connectDB = require('./config/db');
 const { scheduleCleanupJob, runCleanupNow } = require('./utils/cleanupUnverifiedUsers');
 const authRoutes = require('./routes/authRoutes');
 const dataRoutes = require('./routes/dataRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
-const searchRoutes = require('./routes/searchRoutes');
 
 const app = express();
 
@@ -29,14 +27,6 @@ runCleanupNow();
 
 // Security headers first — applied to every response including parse errors
 app.use(helmet());
-
-// Data sanitization: Remove fields with MongoDB operators/special chars
-// This prevents NoSQL injection attacks like: {"email": {$ne: null}}
-app.use(mongoSanitize());
-
-// XSS Protection: Sanitize all incoming request data to prevent script injection
-app.use(xss());
-
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
@@ -105,7 +95,6 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
-app.use('/api/search', searchRoutes);
 app.use('/api/certificate', certificateRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
