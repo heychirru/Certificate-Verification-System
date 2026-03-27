@@ -1,8 +1,11 @@
-const API_BASE_URL_ENV = import.meta.env.VITE_API_BASE_URL
-const DEV_URL = 'http://localhost:5000/api'
-const DEFAULT_PROD_URL = 'https://cvs-backend.onrender.com/api' // Update with your Render URL
+const API_BASE_URL_ENV = (import.meta.env.VITE_API_BASE_URL || '').trim()
+const API_FALLBACK_URL_ENV = (import.meta.env.VITE_API_FALLBACK_URL || '').trim()
+const DEV_URL = 'http://localhost:5000'
+const DEFAULT_PROD_URL = 'https://cvs-backend.onrender.com'
 
-export const API_BASE_URL = API_BASE_URL_ENV || (import.meta.env.DEV ? DEV_URL : DEFAULT_PROD_URL)
+export const API_BASE_URL =
+  API_BASE_URL_ENV || (import.meta.env.DEV ? DEV_URL : DEFAULT_PROD_URL)
+const API_FALLBACK_URL = API_FALLBACK_URL_ENV || DEV_URL
 
 export function formatApiError(err) {
   if (err?.details && Array.isArray(err.details)) {
@@ -16,8 +19,10 @@ export function formatApiError(err) {
  * @param {RequestInit} [options]
  */
 export async function apiJson(path, options = {}) {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
   const tryUrl = async (baseUrl) => {
-    const url = `${baseUrl}${path}`
+    const url = `${baseUrl}${normalizedPath}`
     const { headers: extraHeaders, body, ...rest } = options
     return fetch(url, {
       ...rest,
@@ -32,12 +37,11 @@ export async function apiJson(path, options = {}) {
 
   let res
   try {
-    // Try primary URL first
-    res = await tryUrl(PRIMARY_URL)
+    res = await tryUrl(API_BASE_URL)
   } catch (err) {
-    console.warn('⚠️ Primary URL failed, trying fallback:', PRIMARY_URL, err.message)
-    // Fallback to local development server
-    res = await tryUrl(FALLBACK_URL)
+    if (!API_FALLBACK_URL || API_FALLBACK_URL === API_BASE_URL) throw err
+    console.warn('Primary URL failed, trying fallback:', API_BASE_URL, err.message)
+    res = await tryUrl(API_FALLBACK_URL)
   }
 
   let data = null
