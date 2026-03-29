@@ -11,3 +11,8 @@ export function setAccessToken(token) {
 export function getAccessToken() {
   return localStorage.getItem(STORAGE_KEY)
 }
+
+// --- NEW: Added the missing function! ---
+export function clearAccessToken() {
+  localStorage.removeItem(STORAGE_KEY)
+}
