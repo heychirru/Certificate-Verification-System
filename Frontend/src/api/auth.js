@@ -1,4 +1,5 @@
 import { apiJson } from './client'
+import { apiJsonAuth } from './session'
 
 export function login(credentials) {
   return apiJson('/api/auth/login', {
@@ -27,4 +28,13 @@ export function clerkTokenExchange(clerkToken) {
       Authorization: `Bearer ${clerkToken}`,
     },
   })
+}
+
+// --- NEW MISSING FUNCTIONS ---
+export function refresh() {
+  return apiJson('/api/auth/refresh', { method: 'POST' })
+}
+
+export function me() {
+  return apiJsonAuth('/api/auth/me', { method: 'GET' })
 }

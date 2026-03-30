@@ -9,7 +9,7 @@ const { scheduleCleanupJob, runCleanupNow } = require('./utils/cleanupUnverified
 const authRoutes = require('./routes/authRoutes');
 const dataRoutes = require('./routes/dataRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
-
+const searchRoutes = require('./routes/searchRoutes');
 const app = express();
 
 // Trust proxy - IMPORTANT for production (Render, Heroku, etc use proxies)
@@ -96,6 +96,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/data', dataRoutes);
 app.use('/api/certificate', certificateRoutes);
+app.use('/api/search', searchRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {

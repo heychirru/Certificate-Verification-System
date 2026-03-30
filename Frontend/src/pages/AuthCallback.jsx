@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clerkTokenExchange } from '../api/auth'
 import { setAccessToken } from '../auth/token'
+import { useAuth } from '../context/AuthContext'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
   const { session, isLoaded } = useSession()
   const [error, setError] = useState(null)
+  const { setUser } = useAuth()
 
   useEffect(() => {
     if (!isLoaded) return
@@ -42,9 +44,13 @@ export default function AuthCallback() {
         }
 
         const res = await clerkTokenExchange(token)
-        console.log('✓ Token exchange successful, setting access token')
+        console.log('✓ Token exchange successful:',res)
 
         setAccessToken(res.accessToken)
+        // 3. UPDATE THE GLOBAL STATE! <-- ADD THIS LINE
+        setUser(res.user)
+        // Route them based on their role
+        navigate(res.user?.role === 'admin' ? '/admin' : '/student', { replace: true })
         setTimeout(() => {
           navigate('/', { replace: true })
         }, 500)

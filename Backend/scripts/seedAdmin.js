@@ -24,13 +24,9 @@ async function main() {
 
   const existing = await User.findOne({ email });
   if (existing) {
-    if (existing.role === 'admin') {
-      console.log(`Already an admin: ${email}`);
-      await mongoose.disconnect();
-      process.exit(0);
-    }
-    await User.updateOne({ _id: existing._id }, { $set: { role: 'admin' } });
-    console.log(`Promoted to admin: ${email}`);
+    // UPDATED: Force the existing account to be verified
+    await User.updateOne({ _id: existing._id }, { $set: { role: 'admin', isVerified: true } });
+    console.log(`✅ Updated and verified admin: ${email}`);
     await mongoose.disconnect();
     process.exit(0);
   }
@@ -45,8 +41,9 @@ async function main() {
     process.exit(1);
   }
 
-  await User.create({ name, email, password, role: 'admin' });
-  console.log(`Created admin: ${email}`);
+  // UPDATED: Force the new account to be verified upon creation
+  await User.create({ name, email, password, role: 'admin', isVerified: true });
+  console.log(`✅ Created and verified admin: ${email}`);
   await mongoose.disconnect();
   process.exit(0);
 }
