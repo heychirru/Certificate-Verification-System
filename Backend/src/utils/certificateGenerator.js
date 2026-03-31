@@ -68,7 +68,15 @@ async function generateCertificatePDF(student) {
 
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-extensions',
+      '--single-process',
+      '--no-zygote',
+    ],
   });
 
   try {
