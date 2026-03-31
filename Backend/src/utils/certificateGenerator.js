@@ -1,4 +1,5 @@
-const puppeteer = require('puppeteer');
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
@@ -47,6 +48,7 @@ function formatDate(date) {
 
 /**
  * Generate a PDF certificate buffer for the given student data.
+ * Uses @sparticuz/chromium which works in cloud environments (Render, Lambda, etc.)
  * @param {object} student  Mongoose Student document or plain object
  * @returns {Promise<Buffer>}  Raw PDF binary buffer
  */
@@ -66,22 +68,22 @@ async function generateCertificatePDF(student) {
 
   const html = compiledTemplate(templateData);
 
+  // @sparticuz/chromium auto-detects environment:
+  // - In production (Render/Lambda): uses the bundled lightweight Chromium binary
+  // - In local dev: falls back to a locally installed Chrome/Chromium
+  const executablePath = await chromium.executablePath();
+
   const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--disable-extensions',
-      '--single-process',
-      '--no-zygote',
-    ],
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath,
+    headless: chromium.headless,
   });
 
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // Use 'load' instead of 'networkidle0' to avoid hanging on Google Fonts timeout
+    await page.setContent(html, { waitUntil: 'load', timeout: 30000 });
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,

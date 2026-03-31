@@ -5,14 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Certificate of Internship – {{certificateId}}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+    /* Using system fonts — avoids network requests during PDF generation on Render */
+    :root {
+      --serif: Georgia, 'Times New Roman', serif;
+      --sans:  'Segoe UI', Arial, Helvetica, sans-serif;
+    }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       width: 210mm;
       height: 297mm;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
       background: #fff;
       display: flex;
       align-items: center;
@@ -46,7 +50,7 @@
 
     /* ── Header ── */
     .org-name {
-      font-family: 'Playfair Display', serif;
+      font-family: Georgia, 'Times New Roman', serif;
       font-size: 22pt;
       font-weight: 700;
       color: #1a3a5c;
