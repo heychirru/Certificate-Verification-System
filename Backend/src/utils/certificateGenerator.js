@@ -20,18 +20,40 @@ const compiledTemplate = handlebars.compile(templateSource);
 function calculateDuration(startDate, endDate) {
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const diffMs = end - start;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  let months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
 
-  const months = Math.floor(diffDays / 30);
-  const remainingDays = diffDays % 30;
+  // If the end day-of-month is before the start day-of-month,
+  // the last month isn't complete yet — subtract it and count leftover days
+  const dayStart = start.getDate();
+  const dayEnd = end.getDate();
+
+  let remainingDays = 0;
+  if (dayEnd < dayStart) {
+    months -= 1;
+    // Days remaining = days left in that partial month
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0); // last day of prev month
+    remainingDays = prevMonth.getDate() - dayStart + dayEnd;
+  } else {
+    remainingDays = dayEnd - dayStart;
+  }
+
   const weeks = Math.floor(remainingDays / 7);
+  const days  = remainingDays % 7;
 
   const parts = [];
   if (months > 0) parts.push(`${months} month${months > 1 ? 's' : ''}`);
-  if (weeks > 0)  parts.push(`${weeks} week${weeks > 1 ? 's' : ''}`);
+  if (weeks  > 0) parts.push(`${weeks} week${weeks > 1 ? 's' : ''}`);
+  if (days   > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
 
-  return parts.length > 0 ? parts.join(' ') : `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+  // Fallback: total days if nothing else matched
+  if (parts.length === 0) {
+    const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+    return `${totalDays} day${totalDays !== 1 ? 's' : ''}`;
+  }
+
+  return parts.join(' ');
 }
 
 // ─── Date Formatter ───────────────────────────────────────────────────────────
