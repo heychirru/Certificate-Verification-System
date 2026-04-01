@@ -1,4 +1,5 @@
-const puppeteer = require('puppeteer');
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 const handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
@@ -19,18 +20,40 @@ const compiledTemplate = handlebars.compile(templateSource);
 function calculateDuration(startDate, endDate) {
   const start = new Date(startDate);
   const end = new Date(endDate);
-  const diffMs = end - start;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  let months =
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth());
 
-  const months = Math.floor(diffDays / 30);
-  const remainingDays = diffDays % 30;
+  // If the end day-of-month is before the start day-of-month,
+  // the last month isn't complete yet — subtract it and count leftover days
+  const dayStart = start.getDate();
+  const dayEnd = end.getDate();
+
+  let remainingDays = 0;
+  if (dayEnd < dayStart) {
+    months -= 1;
+    // Days remaining = days left in that partial month
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0); // last day of prev month
+    remainingDays = prevMonth.getDate() - dayStart + dayEnd;
+  } else {
+    remainingDays = dayEnd - dayStart;
+  }
+
   const weeks = Math.floor(remainingDays / 7);
+  const days  = remainingDays % 7;
 
   const parts = [];
   if (months > 0) parts.push(`${months} month${months > 1 ? 's' : ''}`);
-  if (weeks > 0)  parts.push(`${weeks} week${weeks > 1 ? 's' : ''}`);
+  if (weeks  > 0) parts.push(`${weeks} week${weeks > 1 ? 's' : ''}`);
+  if (days   > 0) parts.push(`${days} day${days !== 1 ? 's' : ''}`);
 
-  return parts.length > 0 ? parts.join(' ') : `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+  // Fallback: total days if nothing else matched
+  if (parts.length === 0) {
+    const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+    return `${totalDays} day${totalDays !== 1 ? 's' : ''}`;
+  }
+
+  return parts.join(' ');
 }
 
 // ─── Date Formatter ───────────────────────────────────────────────────────────
@@ -47,6 +70,7 @@ function formatDate(date) {
 
 /**
  * Generate a PDF certificate buffer for the given student data.
+ * Uses @sparticuz/chromium which works in cloud environments (Render, Lambda, etc.)
  * @param {object} student  Mongoose Student document or plain object
  * @returns {Promise<Buffer>}  Raw PDF binary buffer
  */
@@ -66,14 +90,22 @@ async function generateCertificatePDF(student) {
 
   const html = compiledTemplate(templateData);
 
+  // @sparticuz/chromium auto-detects environment:
+  // - In production (Render/Lambda): uses the bundled lightweight Chromium binary
+  // - In local dev: falls back to a locally installed Chrome/Chromium
+  const executablePath = await chromium.executablePath();
+
   const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath,
+    headless: chromium.headless,
   });
 
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // Use 'load' instead of 'networkidle0' to avoid hanging on Google Fonts timeout
+    await page.setContent(html, { waitUntil: 'load', timeout: 30000 });
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,

@@ -1,7 +1,7 @@
 const API_BASE_URL_ENV = (import.meta.env.VITE_API_BASE_URL || '').trim()
 const API_FALLBACK_URL_ENV = (import.meta.env.VITE_API_FALLBACK_URL || '').trim()
 const DEV_URL = 'http://localhost:5000'
-const DEFAULT_PROD_URL = 'https://cvs-backend.onrender.com'
+const DEFAULT_PROD_URL = 'https://certificate-verification-system-eg93.onrender.com'
 
 export const API_BASE_URL =
   API_BASE_URL_ENV || (import.meta.env.DEV ? DEV_URL : DEFAULT_PROD_URL)
