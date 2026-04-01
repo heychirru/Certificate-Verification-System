@@ -20,6 +20,8 @@ const compiledTemplate = handlebars.compile(templateSource);
 function calculateDuration(startDate, endDate) {
   const start = new Date(startDate);
   const end = new Date(endDate);
+
+  // Calendar-aware month difference
   let months =
     (end.getFullYear() - start.getFullYear()) * 12 +
     (end.getMonth() - start.getMonth());
@@ -90,16 +92,41 @@ async function generateCertificatePDF(student) {
 
   const html = compiledTemplate(templateData);
 
-  // @sparticuz/chromium auto-detects environment:
-  // - In production (Render/Lambda): uses the bundled lightweight Chromium binary
-  // - In local dev: falls back to a locally installed Chrome/Chromium
-  const executablePath = await chromium.executablePath();
+  // ── Resolve browser executable based on environment ──────────────────────────
+  // @sparticuz/chromium bundles a Chromium binary for cloud/serverless (Render, Lambda).
+  // On Windows dev machines that binary doesn't exist → ENOENT.
+  // In development we use the locally installed Google Chrome instead.
+  let executablePath;
+  let launchArgs;
+
+  if (process.env.NODE_ENV === 'production') {
+    executablePath = await chromium.executablePath();
+    launchArgs     = chromium.args;
+  } else {
+    // Try common Chrome install locations on Windows; also honour CHROME_PATH override
+    const candidates = [
+      process.env.CHROME_PATH,
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    ].filter(Boolean);
+
+    executablePath = candidates.find(p => fs.existsSync(p));
+
+    if (!executablePath) {
+      throw new Error(
+        '[PDF] Could not find Google Chrome on this machine.\n' +
+        'Install Chrome, or add CHROME_PATH=<path to chrome.exe> to your .env file.'
+      );
+    }
+
+    launchArgs = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
+  }
 
   const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
     executablePath,
-    headless: chromium.headless,
+    args:            launchArgs,
+    defaultViewport: { width: 1200, height: 900 },
+    headless:        true,
   });
 
   try {
