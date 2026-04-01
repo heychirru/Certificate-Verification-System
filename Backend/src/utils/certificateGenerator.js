@@ -139,6 +139,7 @@ async function generateCertificatePDF(student) {
     await page.setContent(html, { waitUntil: 'load', timeout: 30000 });
     const pdfBuffer = await page.pdf({
       format: 'A4',
+      landscape: true,
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
     });
