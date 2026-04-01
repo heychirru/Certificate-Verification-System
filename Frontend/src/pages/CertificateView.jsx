@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 // IMPORT the teammate's search API
 import { verifyCertificate } from '../api/search';
+import { API_BASE_URL } from '../api/client';
 
 const CertificateView = () => {
   const { id } = useParams(); 
@@ -15,7 +16,7 @@ const CertificateView = () => {
   useEffect(() => {
     const fetchCertificate = async () => {
       try {
-        const response = await fetch(`/api/certificate/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/certificate/${id}`);
         if (!response.ok) throw new Error('Certificate not found.');
         const data = await response.json();
         setCertData(data);
@@ -29,7 +30,7 @@ const CertificateView = () => {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`/api/certificate/${id}/download`);
+      const response = await fetch(`${API_BASE_URL}/api/certificate/${id}/download`);
       if (!response.ok) throw new Error('Download failed');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
