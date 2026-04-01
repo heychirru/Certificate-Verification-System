@@ -92,18 +92,18 @@ async function generateCertificatePDF(student) {
 
   const html = compiledTemplate(templateData);
 
-  // ── Resolve browser executable based on environment ──────────────────────────
-  // @sparticuz/chromium bundles a Chromium binary for cloud/serverless (Render, Lambda).
-  // On Windows dev machines that binary doesn't exist → ENOENT.
-  // In development we use the locally installed Google Chrome instead.
+  // ── Resolve browser executable based on OS + environment ─────────────────────
+  // Render/Lambda = Linux  → use @sparticuz/chromium (bundled binary)
+  // Local Windows dev      → use locally installed Google Chrome
+  // Guard by BOTH platform AND NODE_ENV so it works even if NODE_ENV is misconfigured.
   let executablePath;
   let launchArgs;
 
-  if (process.env.NODE_ENV === 'production') {
-    executablePath = await chromium.executablePath();
-    launchArgs     = chromium.args;
-  } else {
-    // Try common Chrome install locations on Windows; also honour CHROME_PATH override
+  const isWindowsDev =
+    process.platform === 'win32' && process.env.NODE_ENV !== 'production';
+
+  if (isWindowsDev) {
+    // Windows local dev: find the system Chrome
     const candidates = [
       process.env.CHROME_PATH,
       'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -115,11 +115,15 @@ async function generateCertificatePDF(student) {
     if (!executablePath) {
       throw new Error(
         '[PDF] Could not find Google Chrome on this machine.\n' +
-        'Install Chrome, or add CHROME_PATH=<path to chrome.exe> to your .env file.'
+        'Install Chrome, or add CHROME_PATH=<path to chrome.exe> to your Backend .env file.'
       );
     }
 
     launchArgs = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
+  } else {
+    // Linux (Render, AWS Lambda, etc.): use @sparticuz/chromium
+    executablePath = await chromium.executablePath();
+    launchArgs     = chromium.args;
   }
 
   const browser = await puppeteer.launch({
