@@ -38,6 +38,16 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // --- NEW: Student Digital Wallet ---
+    savedCertificates: {
+      type: [String],
+      default: [],
+    },
+    verificationToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
     verificationToken: {
       type: String,
       default: null,
