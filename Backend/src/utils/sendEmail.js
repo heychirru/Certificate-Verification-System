@@ -5,27 +5,25 @@ const nodemailer = require('nodemailer');
 // ─────────────────────────────────────────────────────────────────────────────
 let transporter;
 
-if (process.env.NODE_ENV === 'production') {
-  // Production: Try Gmail first, with longer timeout
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER?.trim(),
-      pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
-    },
-    timeout: 10000, // Increase timeout for Render
-    connectionUrl: process.env.EMAIL_URL, // Alternative: use EMAIL_URL if set
-  });
-} else {
-  // Development: Use Gmail
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.GMAIL_USER?.trim(),
-      pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
-    },
-  });
-}
+// Force IPv4 explicitly — avoids ENETUNREACH on Render which doesn't route
+// outbound IPv6. Using host/port instead of service:'gmail' prevents the DNS
+// resolver from picking the IPv6 address (2404:6800:...:465).
+transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,      // TLS via STARTTLS on port 587
+  family: 4,          // Force IPv4
+  auth: {
+    user: process.env.GMAIL_USER?.trim(),
+    pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+  connectionTimeout: 15000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
+});
 
 // Verify transporter on startup (non-blocking)
 transporter.verify((error, success) => {
