@@ -14,8 +14,8 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      width: 210mm;
-      height: 297mm;
+      width: 297mm;
+      height: 210mm;
       font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
       background: #fff;
       display: flex;
@@ -24,12 +24,12 @@
     }
 
     .certificate {
-      width: 190mm;
-      height: 277mm;
+      width: 277mm;
+      height: 190mm;
       border: 2px solid #1a3a5c;
       outline: 6px solid #c9a84c;
       outline-offset: -12px;
-      padding: 14mm 16mm;
+      padding: 10mm 14mm;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -197,10 +197,9 @@
 
     <!-- Body -->
     <p class="body-text">
-      has successfully completed an internship in the field of<br/>
-      <span class="highlight">{{internshipDomain}}</span><br/>
-      from <span class="highlight">{{startDate}}</span> to <span class="highlight">{{endDate}}</span><br/>
-      for a total duration of <span class="highlight">{{duration}}</span>.
+      For Completing <span class="highlight">{{internshipDomain}}</span> at
+      <span class="highlight">{{organizationName}}</span> between<br/>
+      <span class="highlight">{{startDate}}</span> &amp; <span class="highlight">{{endDate}}</span>.
     </p>
 
     <!-- Details Grid -->

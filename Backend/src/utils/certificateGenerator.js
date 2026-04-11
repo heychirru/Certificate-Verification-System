@@ -20,6 +20,8 @@ const compiledTemplate = handlebars.compile(templateSource);
 function calculateDuration(startDate, endDate) {
   const start = new Date(startDate);
   const end = new Date(endDate);
+
+  // Calendar-aware month difference
   let months =
     (end.getFullYear() - start.getFullYear()) * 12 +
     (end.getMonth() - start.getMonth());
@@ -90,16 +92,45 @@ async function generateCertificatePDF(student) {
 
   const html = compiledTemplate(templateData);
 
-  // @sparticuz/chromium auto-detects environment:
-  // - In production (Render/Lambda): uses the bundled lightweight Chromium binary
-  // - In local dev: falls back to a locally installed Chrome/Chromium
-  const executablePath = await chromium.executablePath();
+  // ── Resolve browser executable based on OS + environment ─────────────────────
+  // Render/Lambda = Linux  → use @sparticuz/chromium (bundled binary)
+  // Local Windows dev      → use locally installed Google Chrome
+  // Guard by BOTH platform AND NODE_ENV so it works even if NODE_ENV is misconfigured.
+  let executablePath;
+  let launchArgs;
+
+  const isWindowsDev =
+    process.platform === 'win32' && process.env.NODE_ENV !== 'production';
+
+  if (isWindowsDev) {
+    // Windows local dev: find the system Chrome
+    const candidates = [
+      process.env.CHROME_PATH,
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    ].filter(Boolean);
+
+    executablePath = candidates.find(p => fs.existsSync(p));
+
+    if (!executablePath) {
+      throw new Error(
+        '[PDF] Could not find Google Chrome on this machine.\n' +
+        'Install Chrome, or add CHROME_PATH=<path to chrome.exe> to your Backend .env file.'
+      );
+    }
+
+    launchArgs = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
+  } else {
+    // Linux (Render, AWS Lambda, etc.): use @sparticuz/chromium
+    executablePath = await chromium.executablePath();
+    launchArgs     = chromium.args;
+  }
 
   const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
     executablePath,
-    headless: chromium.headless,
+    args:            launchArgs,
+    defaultViewport: { width: 1200, height: 900 },
+    headless:        true,
   });
 
   try {
@@ -108,6 +139,7 @@ async function generateCertificatePDF(student) {
     await page.setContent(html, { waitUntil: 'load', timeout: 30000 });
     const pdfBuffer = await page.pdf({
       format: 'A4',
+      landscape: true,
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' },
     });

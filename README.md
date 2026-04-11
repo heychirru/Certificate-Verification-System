@@ -1,5 +1,8 @@
 # Certificate Verification System
+---
+**Live Demo:** <a href="https://credi-fy.vercel.app/" target="_blank" rel="noopener noreferrer">Click here to view the live application</a>
 
+---
 A comprehensive system for managing user authentication, generating certificates, and verifying their authenticity. Built with modern technologies for security and scalability.
 
 ---
