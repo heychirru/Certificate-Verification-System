@@ -48,11 +48,6 @@ const userSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
-    verificationToken: {
-      type: String,
-      default: null,
-      select: false,
-    },
     verificationTokenExpiry: {
       type: Date,
       default: null,
@@ -60,13 +55,11 @@ const userSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // Auto-manages createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-// ─── Pre-save Hook: Hash password before saving ───────────────────────────────
 userSchema.pre('save', async function (next) {
-  // Only hash if password was modified
   if (!this.isModified('password')) return next();
 
   try {

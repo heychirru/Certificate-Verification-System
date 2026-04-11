@@ -236,8 +236,13 @@ const verifyEmail = async (req, res, next) => {
     );
 
     if (!user) {
-      console.warn('❌ No user found with this token');
-      return res.status(400).json({ error: 'Invalid or expired verification token' });
+      console.warn('❌ No user found with this token — may have already been verified');
+      // Return a 200 with already-verified indicator so the frontend handles it gracefully
+      // (e.g. React StrictMode fires useEffect twice, or user clicks link twice)
+      return res.status(200).json({
+        message: 'Email already verified! You can now login.',
+        alreadyVerified: true,
+      });
     }
 
     console.log('✓ User found:', user.email);

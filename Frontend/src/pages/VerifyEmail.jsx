@@ -17,33 +17,40 @@ export default function VerifyEmail() {
       return;
     }
 
+    let cancelled = false;
+
     const verify = async () => {
       try {
         const response = await verifyEmail(token);
-        setStatus('success');
-        setMessage(response.message || 'Email verified successfully!');
+
+        if (cancelled) return;
+
+        // Handle both "just verified" and "already verified" responses
+        if (response.alreadyVerified) {
+          setStatus('success');
+          setMessage('Your email is already verified! Redirecting to login...');
+        } else {
+          setStatus('success');
+          setMessage(response.message || 'Email verified successfully!');
+        }
 
         // Redirect to login after 3 seconds
         setTimeout(() => {
           navigate('/sign-in');
         }, 3000);
       } catch (error) {
+        if (cancelled) return;
         console.error('Verification error:', error);
-        // If 400 error and message contains "already verified", treat as success
-        if (error.status === 400 && error.payload?.email) {
-          setStatus('success');
-          setMessage('Your email has already been verified! Redirecting to login...');
-          setTimeout(() => {
-            navigate('/sign-in');
-          }, 2000);
-        } else {
-          setStatus('error');
-          setMessage(error.message || 'Verification failed. The link may have expired.');
-        }
+        setStatus('error');
+        setMessage(error.message || 'Verification failed. The link may have expired.');
       }
     };
 
     verify();
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, navigate]);
 
   return (
