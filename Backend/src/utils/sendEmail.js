@@ -1,9 +1,39 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Initialize Resend client (uses HTTPS — works on Render free tier)
+// Create transporter using Gmail SMTP with production fallback
 // ─────────────────────────────────────────────────────────────────────────────
-const resend = new Resend(process.env.RESEND_API_KEY);
+let transporter;
+
+if (process.env.NODE_ENV === 'production') {
+  // Production: Try Gmail first, with longer timeout
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER?.trim(),
+      pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
+    },
+    timeout: 10000, // Increase timeout for Render
+    connectionUrl: process.env.EMAIL_URL, // Alternative: use EMAIL_URL if set
+  });
+} else {
+  // Development: Use Gmail
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER?.trim(),
+      pass: process.env.GMAIL_APP_PASSWORD?.trim().replace(/\s/g, ''),
+    },
+  });
+}
+
+// Verify transporter on startup (non-blocking)
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('⚠️  Email transporter verification failed:', error.message);
+    console.log('📧 Email sending will be retried when needed');
+  }
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // @desc    Generate branded HTML verification email
@@ -74,6 +104,10 @@ const generateVerificationEmailHTML = (email, verificationToken, userName) => {
           text-decoration: none;
           font-weight: bold;
           font-size: 16px;
+          transition: background-color 0.3s ease;
+        }
+        .verify-button:hover {
+          background-color: #764ba2;
         }
         .alternative-link {
           text-align: center;
@@ -134,7 +168,7 @@ const generateVerificationEmailHTML = (email, verificationToken, userName) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Send verification email using Resend HTTP API with retry logic
+// @desc    Send verification email using Nodemailer with retry logic
 // @param   {string} email - Recipient email
 // @param   {string} verificationToken - Token for verification
 // @param   {string} userName - User's name
@@ -142,23 +176,20 @@ const generateVerificationEmailHTML = (email, verificationToken, userName) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const sendVerificationEmail = async (email, verificationToken, userName, retries = 3) => {
   let lastError;
-
+  
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const { data, error } = await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'Certificate Verification System <onboarding@resend.dev>',
+      const mailOptions = {
+        from: `"Certificate Verification System" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: 'Verify Your Email Address',
         html: generateVerificationEmailHTML(email, verificationToken, userName),
-      });
+      };
 
-      if (error) {
-        throw new Error(error.message || 'Resend API error');
-      }
-
-      console.log(`✓ Verification email sent to ${email} (id: ${data?.id})`);
-      return; // Success
-
+      await transporter.sendMail(mailOptions);
+      console.log(`✓ Verification email sent to ${email}`);
+      return; // Success - exit function
+      
     } catch (error) {
       lastError = error;
       console.error(
@@ -166,16 +197,17 @@ const sendVerificationEmail = async (email, verificationToken, userName, retries
         error.message
       );
 
-      // Don't retry on auth/config errors
+      // Don't retry on auth errors or syntax errors
       if (
-        error.message.includes('API key') ||
-        error.message.includes('Invalid') ||
-        error.message.includes('Unauthorized')
+        error.message.includes('Invalid login') || 
+        error.message.includes('Invalid email') ||
+        error.message.includes('Bad email')
       ) {
-        console.error('❌ Resend API key error - not retrying');
+        console.error('❌ Email configuration error - not retrying');
         break;
       }
 
+      // Wait before retry (exponential backoff: 2s, 4s, 6s)
       if (attempt < retries) {
         const waitTime = attempt * 2000;
         console.log(`⏳ Retrying in ${waitTime}ms...`);
@@ -184,6 +216,7 @@ const sendVerificationEmail = async (email, verificationToken, userName, retries
     }
   }
 
+  // All retries failed
   console.error(
     `❌ Failed to send verification email to ${email} after ${retries} attempts:`,
     lastError.message
